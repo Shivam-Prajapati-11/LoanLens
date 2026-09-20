@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoanLens &middot; Loan Approval Prediction</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <!-- Animated background -->
+    <div class="bg" aria-hidden="true">
+      <span class="orb orb--1"></span>
+      <span class="orb orb--2"></span>
+      <span class="orb orb--3"></span>
+      <span class="grid-overlay"></span>
+    </div>
+
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="/">
+          <span class="brand__mark">LL</span>
+          <span class="brand__text">
+            <strong>LoanLens</strong>
+            <small>Approval Intelligence</small>
+          </span>
+        </a>
+        <nav class="topbar__nav">
+          <a class="navlink is-active" href="/">Predict</a>
+          <a class="navlink" href="/history">History</a>
+        </nav>
+      </header>
+
+      <main class="panel">
+        <div class="panel__head">
+          <h1>Loan Approval Prediction</h1>
+          <p>
+            Answer <strong>3 short steps</strong> and LoanLens will estimate
+            whether this application would be approved.
+          </p>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress">
+          <div class="progress__track">
+            <span class="progress__bar" id="progress-bar"></span>
+          </div>
+          <ol class="progress__steps">
+            <li class="step is-active" data-step="1">
+              <span class="step__dot">1</span>
+              <span class="step__label">Applicant</span>
+            </li>
+            <li class="step" data-step="2">
+              <span class="step__dot">2</span>
+              <span class="step__label">Financials</span>
+            </li>
+            <li class="step" data-step="3">
+              <span class="step__dot">3</span>
+              <span class="step__label">Assets</span>
+            </li>
+          </ol>
+        </div>
+
+        <form id="loan-form" novalidate>
+          <!-- Step 1 -->
+          <section class="step-panel is-active" data-panel="1">
+            <h2 class="step-panel__title">
+              <span class="step-panel__icon">&#128100;</span> Applicant details
+            </h2>
+            <div class="grid">
+              <label class="field field--wide">
+                <span class="field__label">Applicant name</span>
+                <input type="text" id="applicant_name" maxlength="100"
+                       placeholder="e.g. Ravi Kumar" autocomplete="name" required />
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Number of dependents</span>
+                <input type="number" id="No_of_dependents" min="0" max="10"
+                       step="1" value="2" required />
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Education</span>
+                <select id="Education" required>
+                  <option value="Graduate">Graduate</option>
+                  <option value="Not Graduate">Not Graduate</option>
+                </select>
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Self employed</span>
+                <select id="Self_employed" required>
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                </select>
+                <small class="field__error"></small>
+              </label>
+            </div>
+          </section>
+
+          <!-- Step 2 -->
+          <section class="step-panel" data-panel="2">
+            <h2 class="step-panel__title">
+              <span class="step-panel__icon">&#128176;</span> Loan &amp; income
+            </h2>
+            <div class="grid">
+              <label class="field">
+                <span class="field__label">Annual income</span>
+                <input type="number" id="Income_annum" min="0" step="1000"
+                       value="5000000" required />
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Loan amount</span>
+                <input type="number" id="Loan_amount" min="0" step="1000"
+                       value="20000000" required />
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Loan term (years)</span>
+                <input type="number" id="Loan_term" min="1" max="40" step="1"
+                       value="10" required />
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field field--wide">
+                <span class="field__label">
+                  CIBIL score <em class="hint">300 &ndash; 900</em>
+                </span>
+                <input type="number" id="Cibil_score" min="300" max="900"
+                       step="1" value="750" required />
+                <input type="range" id="Cibil_score_range" class="range"
+                       min="300" max="900" step="1" value="750"
+                       aria-label="CIBIL score slider" />
+                <small class="field__error"></small>
+              </label>
+            </div>
+          </section>
+
+          <!-- Step 3 -->
+          <section class="step-panel" data-panel="3">
+            <h2 class="step-panel__title">
+              <span class="step-panel__icon">&#127968;</span> Asset values
+            </h2>
+            <div class="grid">
+              <label class="field">
+                <span class="field__label">Residential assets</span>
+                <input type="number" id="Residential_assets_value" step="1000"
+                       value="10000000" required />
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Commercial assets</span>
+                <input type="number" id="Commercial_assets_value" min="0"
+                       step="1000" value="5000000" required />
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Luxury assets</span>
+                <input type="number" id="Luxury_assets_value" min="0"
+                       step="1000" value="3000000" required />
+                <small class="field__error"></small>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Bank assets</span>
+                <input type="number" id="Bank_asset_value" min="0" step="1000"
+                       value="5000000" required />
+                <small class="field__error"></small>
+              </label>
+            </div>
+          </section>
+
+          <div class="actions">
+            <button type="button" class="btn btn--ghost" id="back-btn" hidden>
+              &larr; Back
+            </button>
+            <span class="actions__spacer"></span>
+            <button type="button" class="btn btn--primary" id="next-btn">
+              Continue &rarr;
+            </button>
+            <button type="submit" class="btn btn--primary" id="submit-btn" hidden>
+              Predict loan
+            </button>
+          </div>
+        </form>
+
+        <section id="result" class="result hidden" aria-live="polite"></section>
+
+        <p class="disclaimer">
+          This is a machine-learning prediction, not an actual bank lending decision.
+        </p>
+      </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+# Version control & tooling
+.git
+.github
+.gitignore
+
+# Python caches
+__pycache__
+*.py[cod]
+*.egg-info
+
+# Virtual environments
+.venv
+venv
+env
+
+# Notebooks / tests / EDA output are not needed to serve predictions
+notebooks
+tests
+plots
+data
+plan.txt
+*.ipynb_checkpoints
+.pytest_cache
+*.db
+*.db-journal
+
+# Docs & Docker files themselves
+README.md
+Dockerfile
+.dockerignore
+render.yaml
+
+# OS noise
+.DS_Store
+Thumbs.db
+*.log

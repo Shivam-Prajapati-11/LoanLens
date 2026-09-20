@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prediction History &middot; LoanLens</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true">
+      <span class="orb orb--1"></span>
+      <span class="orb orb--2"></span>
+      <span class="orb orb--3"></span>
+      <span class="grid-overlay"></span>
+    </div>
+
+    <div class="shell shell--wide">
+      <header class="topbar">
+        <a class="brand" href="/">
+          <span class="brand__mark">LL</span>
+          <span class="brand__text">
+            <strong>LoanLens</strong>
+            <small>Approval Intelligence</small>
+          </span>
+        </a>
+        <nav class="topbar__nav">
+          <a class="navlink" href="/">Predict</a>
+          <a class="navlink is-active" href="/history">History</a>
+        </nav>
+      </header>
+
+      <main class="panel">
+        <div class="panel__head">
+          <h1>Prediction History</h1>
+          <p>Every loan application scored by LoanLens, stored in SQLite.</p>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat__label">Submissions</div>
+            <div class="stat__value" id="stat-total">&mdash;</div>
+          </div>
+          <div class="stat stat--ok">
+            <div class="stat__label">Approved</div>
+            <div class="stat__value" id="stat-approved">&mdash;</div>
+          </div>
+          <div class="stat stat--bad">
+            <div class="stat__label">Rejected</div>
+            <div class="stat__value" id="stat-rejected">&mdash;</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Approval rate</div>
+            <div class="stat__value" id="stat-rate">&mdash;</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <input
+            type="search"
+            id="search"
+            placeholder="Search by applicant, education or result..."
+            aria-label="Search submissions"
+          />
+          <button class="btn btn--ghost" id="refresh-btn" type="button">
+            Refresh
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table id="history-table">
+            <caption class="sr-only">Stored loan approval predictions</caption>
+            <thead>
+              <tr></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="table-state" id="table-state">Loading submissions...</p>
+        </div>
+
+        <p class="disclaimer">
+          This is a machine-learning prediction, not an actual bank lending decision.
+        </p>
+      </main>
+    </div>
+
+    <script src="/static/history.js"></script>
+  </body>
+</html>

@@ -1,0 +1,55 @@
+{
+  "model_name": "Random Forest",
+  "target_column": "loan_status",
+  "target_mapping": {
+    "Rejected": 0,
+    "Approved": 1
+  },
+  "numeric_features": [
+    "no_of_dependents",
+    "income_annum",
+    "loan_amount",
+    "loan_term",
+    "cibil_score",
+    "residential_assets_value",
+    "commercial_assets_value",
+    "luxury_assets_value",
+    "bank_asset_value"
+  ],
+  "categorical_features": [
+    "education",
+    "self_employed"
+  ],
+  "feature_columns": [
+    "no_of_dependents",
+    "income_annum",
+    "loan_amount",
+    "loan_term",
+    "cibil_score",
+    "residential_assets_value",
+    "commercial_assets_value",
+    "luxury_assets_value",
+    "bank_asset_value",
+    "education",
+    "self_employed"
+  ],
+  "categorical_options": {
+    "education": [
+      "Graduate",
+      "Not Graduate"
+    ],
+    "self_employed": [
+      "No",
+      "Yes"
+    ]
+  },
+  "random_state": 42,
+  "test_size": 0.2,
+  "trained_on_rows": 3415,
+  "metrics": {
+    "accuracy": 0.9836065573770492,
+    "precision": 0.9849906191369606,
+    "recall": 0.9887005649717514,
+    "f1": 0.9868421052631579
+  }
+}

@@ -1,0 +1,15 @@
+# ---------------------------------------------------------------------------
+# Render Blueprint (Phase 11)
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repository.
+# Render builds the Dockerfile below and exposes the app on a public URL.
+# ---------------------------------------------------------------------------
+services:
+  - type: web
+    name: loan-approval-prediction
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true

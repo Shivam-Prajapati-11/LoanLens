@@ -1,0 +1,23 @@
+{
+  "comparison": {
+    "Random Forest": {
+      "accuracy": 0.9836065573770492,
+      "precision": 0.9849906191369606,
+      "recall": 0.9887005649717514,
+      "f1": 0.9868421052631579
+    },
+    "Decision Tree": {
+      "accuracy": 0.9754098360655737,
+      "precision": 0.9866412213740458,
+      "recall": 0.9736346516007532,
+      "f1": 0.9800947867298578
+    },
+    "Logistic Regression": {
+      "accuracy": 0.9238875878220141,
+      "precision": 0.955078125,
+      "recall": 0.9209039548022598,
+      "f1": 0.9376797698945349
+    }
+  },
+  "best_model": "Random Forest"
+}
