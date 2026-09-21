@@ -1,191 +1,140 @@
-# LoanLens - Loan Approval Prediction System
+# LoanLens
 
-A comprehensive full-stack machine learning application that predicts whether
-a loan application will be **Approved** or **Rejected**. The project integrates
-an end-to-end ML pipeline (Pandas + scikit-learn) with a FastAPI backend,
-an SQLite prediction log, and a premium animated web frontend.
+LoanLens predicts whether a loan application will be **Approved** or **Rejected**.
+Enter the applicant details in a 3-step form, the trained model scores them, and
+every submission is saved so you can review it later on a history dashboard.
 
----
+- **Live app:** https://loan-approval-prediction-self.vercel.app
+- **API health check:** https://loan-approval-prediction-qsnu.onrender.com/health
+- **Model:** Random Forest - F1 **0.987**, accuracy **0.984** (4,269 real applications)
 
-## Project Overview
-
-An **end-to-end machine learning project** covering the complete modeling lifecycle:
-data cleaning, exploratory data analysis, feature engineering, multi-model training
-and comparison, evaluation, serialization, REST API serving, database logging,
-containerization, and CI/CD. The ML pipeline is the core of the project - the web
-app and database exist to serve and monitor the model. Trained on **4,269 real
-loan application records** with 11 features (demographic, financial, and credit-score data).
+> Demo project - this is a machine-learning prediction, not a real lending decision.
 
 ---
 
-## Key Technical Features
+## What the project does
 
-- **End-to-End ML Pipeline** - Median/mode imputation, standardization, and one-hot
-  encoding wrapped in a scikit-learn `Pipeline` + `ColumnTransformer` to prevent data leakage.
-- **Model Comparison** - Logistic Regression, Decision Tree, and Random Forest trained
-  with `class_weight="balanced"`; best model auto-selected on F1-score.
-
-  | Model | Accuracy | Precision | Recall | F1 |
-  |---|---|---|---|---|
-  | Random Forest | **0.984** | **0.985** | **0.989** | **0.987** |
-  | Decision Tree | 0.975 | 0.987 | 0.974 | 0.980 |
-  | Logistic Regression | 0.924 | 0.955 | 0.921 | 0.938 |
-
-- **Key Insight** - `cibil_score` dominates the outcome (correlation ~ 0.77), explaining
-  why the non-linear Random Forest outperforms Logistic Regression.
-- **REST API** - FastAPI service with `POST /predict`, `GET /health`, `GET /metadata`,
-  and automatic OpenAPI documentation (`/docs`) with Pydantic input validation (HTTP 422 on bad input).
-- **Prediction Logging** - Every request is stored in SQLite via SQLAlchemy
-  (applicant name, all 11 inputs, prediction, probability, UTC timestamp).
-- **Analytics Dashboard** - `/history` page with sortable table and live stats
-  (total submissions, approvals, rejections, approval rate).
-- **Containerized & CI-Ready** - Dockerfile plus a GitHub Actions workflow
-  that retrains the model and runs the test suite on every push.
+| Part | Description |
+|---|---|
+| **Machine learning** | Trains and compares 3 classifiers on 11 applicant features and saves the best one (Random Forest) as a single reusable pipeline |
+| **Web app** | 3-step form with live validation, animated result card, and a sortable history dashboard |
+| **API** | FastAPI service that serves the model (`POST /predict`) with auto-generated docs at `/docs` |
+| **Storage** | Every prediction is logged to SQLite through SQLAlchemy |
+| **Delivery** | Dockerfile, Render blueprint, and GitHub Actions CI that retrains and tests on every push |
 
 ---
 
-## Exploratory Data Analysis
-
-8 generated visualizations in `plots/`: CIBIL score distribution by approval status,
-income and loan-amount distributions, categorical feature breakdowns, class balance,
-loan-term analysis, correlation heatmap, and an income-vs-loan-amount scatter plot.
-
----
-
-## Database Architecture
-
-SQLite (via SQLAlchemy ORM) with automated schema creation:
-
-- **prediction_logs** - one row per prediction: applicant name, all 11 input features,
-  prediction, probability, and timestamp.
-- **models/loan_model.pkl** - serialized pipeline (preprocessing + classifier) with
-  `model_metadata.json` and `metrics.json` for auditability.
-
-> `DATABASE_URL` is environment-driven - tests automatically use a throwaway
-> database so real history is never polluted.
-
----
-
-## File Structure & Logic
-
-```
-+-- src/train.py               # Full pipeline: EDA, preprocessing, training, evaluation, export
-+-- app/main.py                # FastAPI app: /predict, /health, /metadata, /api/history
-+-- app/schemas.py             # Pydantic request/response validation (incl. UTC timestamp fix)
-+-- app/database.py            # SQLAlchemy engine, sessions, init_db()
-+-- app/models.py              # ORM model for the prediction_logs table
-+-- static/index.html|css|js   # 3-step animated form UI (progress bar, orbs, result reveal)
-+-- static/history.html|js     # Sortable history dashboard with stat cards
-+-- static/config.js           # Frontend API base URL (same origin vs. Vercel + Render split)
-+-- tests/test_api.py          # 13 integration tests (TestClient, temp DB, CORS)
-+-- notebooks/loan_analysis.ipynb  # Executed end-to-end; metrics match train.py exactly
-+-- Dockerfile / .dockerignore # Container deployment
-+-- render.yaml                # One-click Render blueprint (service `loanlens-api`)
-+-- .github/workflows/ci.yml   # Retrain + test on push
-```
-
----
-
-## Deployment: Vercel (frontend) + Render (API)
-
-The app can run in **one** place or be split in two. Both modes are supported by
-the same code, and which one is active is decided by `ALLOWED_ORIGINS` (API side)
-and `window.LOANLENS_API_BASE` (frontend side).
-
-### Where each piece lives
-
-| Piece | Same-origin (Render or Docker) | Split (Vercel UI + Render API) |
-|---|---|---|
-| HTML/CSS/JS | FastAPI serves `/`, `/history`, `/static/*` | Vercel serves the page |
-| `/predict`, `/api/history` | Same host | Render Web Service |
-| `window.LOANLENS_API_BASE` | `""` | `https://loanlens-api.onrender.com` |
-
-### Render (API)
-
-Live service: **https://loan-approval-prediction-qsnu.onrender.com**
-(`GET /health` -> `{"status":"ok","model_name":"Random Forest","model_loaded":true}`)
-
-* `render.yaml` names the service `loan-approval-prediction-qsnu` because Render
-  **uniquified** the original `loan-approval-prediction` (that plain name belongs
-  to the older *Loan-Approval-Prediction* static site). Blueprints match services
-  by name, so keep this value in sync with the dashboard - renaming it would
-  create a second service with a different URL instead of updating this one.
-* Set `ALLOWED_ORIGINS` to the frontend origin(s), comma separated. The built-in
-  default already allows `https://loan-approval-prediction-self.vercel.app`.
-* Free plan has **no persistent disk**: the SQLite history resets on every
-  deploy/restart (this is why `app/database.py` falls back to a temp directory
-  instead of crashing). Uncomment `DATABASE_URL` + `databases:` in `render.yaml`
-  for a durable database.
-
-### Vercel (frontend)
-
-Live site: **https://loan-approval-prediction-self.vercel.app**
-
-1. `static/config.js` -> `window.LOANLENS_API_BASE = "https://loan-approval-prediction-qsnu.onrender.com";`
-   (no trailing slash). Leave it `""` when Vercel hosts the API too.
-2. Make sure the Vercel origin is in the API's `ALLOWED_ORIGINS`.
-
-### Verifying the connection after a deploy
+## Quick start
 
 ```bash
-# 1. API alive on Render
-curl https://loan-approval-prediction-qsnu.onrender.com/health
+git clone https://github.com/Shivam-Prajapati-11/LoanLens.git
+cd LoanLens
+pip install -r requirements.txt
 
-# 2. CORS preflight must answer 200 *and* echo the Vercel origin.
-#    405 with no access-control-allow-origin header = the CORS build is not
-#    deployed yet (browser will block every call and the UI looks "not connected").
-curl -i -X OPTIONS https://loan-approval-prediction-qsnu.onrender.com/predict \
-  -H "Origin: https://loan-approval-prediction-self.vercel.app" \
-  -H "Access-Control-Request-Method: POST"
-
-# 3. The frontend must ship the runtime config
-curl -i https://loan-approval-prediction-self.vercel.app/static/config.js
+python -m src.train        # trains the model + writes plots/ and models/
+python -m tests.test_api   # 13 API tests (uses a throwaway database)
+uvicorn app.main:app --reload
 ```
 
-All three must succeed **and the changes must be committed + pushed** - both
-hosts deploy from `main`, so local edits alone never reach either URL.
+Then open:
 
-### Why `POST /predict` used to return HTTP 500 on Vercel
-
-Vercel (like every serverless host) mounts the deployment **read-only**, so
-`db.commit()` into `<bundle>/predictions.db` raised
-`sqlite3.OperationalError: attempt to write a readonly database`. GET routes were
-fine because they only read, which made the API look half-connected. The
-prediction itself never failed. `app/database.py` now probes the project
-directory and falls back to a writable temp directory, and `POST /predict`
-returns a descriptive JSON error instead of an opaque 500 if storage ever fails
-again.
+- http://127.0.0.1:8000/ - prediction form
+- http://127.0.0.1:8000/history - saved predictions
+- http://127.0.0.1:8000/docs - interactive API
 
 ---
 
-## Getting Started
+## API
 
-### Prerequisites
-- Python 3.10+
-- Libraries: `pip install -r requirements.txt` (scikit-learn, FastAPI, uvicorn, SQLAlchemy, pydantic)
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/health` | Liveness check (used by Docker / Render) |
+| `GET` | `/metadata` | Model name, metrics, and valid feature values |
+| `POST` | `/predict` | Predict Approved / Rejected for one application |
+| `GET` | `/api/history` | All stored predictions, newest first |
+| `GET` | `/history` | History dashboard page |
+| `GET` | `/docs` | Swagger UI |
 
-### Installation
-1. **Clone the Repo:**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/LoanLens.git
-   cd LoanLens
-   ```
-2. **Train the Model** (generates `models/loan_model.pkl` and all plots):
-   ```bash
-   python -m src.train
-   ```
-3. **Run Tests** (optional, uses a temp database):
-   ```bash
-   python -m tests.test_api
-   ```
-4. **Launch the Platform:**
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-5. Open `http://127.0.0.1:8000/` for the prediction form, `/history` for the
-   analytics dashboard, and `/docs` for the interactive API.
+Example request:
 
-### Docker
+```bash
+curl -X POST http://127.0.0.1:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "applicant_name": "Ravi Kumar",
+    "No_of_dependents": 2,
+    "Education": "Graduate",
+    "Self_employed": "No",
+    "Income_annum": 5000000,
+    "Loan_amount": 20000000,
+    "Loan_term": 10,
+    "Cibil_score": 750,
+    "Residential_assets_value": 10000000,
+    "Commercial_assets_value": 5000000,
+    "Luxury_assets_value": 3000000,
+    "Bank_asset_value": 5000000
+  }'
+```
+
+```json
+{"result": "Approved", "probability": 0.9233}
+```
+
+Invalid input is rejected with HTTP `422` and the reason.
+
+---
+
+## How the model works
+
+1. **Clean** - strip whitespace from headers and values, drop duplicates, enforce types.
+2. **Explore** - EDA shows `cibil_score` is by far the strongest signal (`|r| = 0.77`).
+3. **Preprocess** - one `ColumnTransformer`: median impute + scale the numeric features,
+   most-frequent impute + one-hot encode the categorical ones. It is fitted on the
+   training split only, so no information leaks from the test set.
+4. **Train and compare** - three algorithms with `class_weight="balanced"`; the best
+   F1-score wins.
+5. **Serve** - the whole pipeline (preprocessing + model) is saved with `joblib`, so the
+   API applies exactly the same steps at prediction time.
+
+| Model | Accuracy | Precision | Recall | F1 |
+|---|---|---|---|---|
+| **Random Forest** | **0.984** | **0.985** | **0.989** | **0.987** |
+| Decision Tree | 0.975 | 0.987 | 0.974 | 0.980 |
+| Logistic Regression | 0.924 | 0.955 | 0.921 | 0.938 |
+
+Metrics come from a 20% stratified test split (`random_state=42`). The 8 EDA charts and
+3 confusion matrices are in `plots/`, and `notebooks/loan_analysis.ipynb` reproduces the
+same numbers.
+
+---
+
+## Project structure
+
+```
+app/main.py            FastAPI app: routes, CORS, static pages
+app/schemas.py         Pydantic request/response models (input validation)
+app/database.py        SQLAlchemy engine/session, init_db(), writable-path fallback
+app/models.py          ORM table `prediction_logs`
+src/train.py           Training: EDA -> preprocessing -> train -> evaluate -> export
+static/index.html      Prediction form UI
+static/history.html    History dashboard UI
+static/script.js       Form logic + POST /predict call
+static/history.js      Dashboard logic + GET /api/history call
+static/config.js       Frontend API base URL
+static/style.css       Styling
+tests/test_api.py      API tests (TestClient + temp database)
+data/loan_data.csv     4,269 loan applications
+models/                loan_model.pkl, model_metadata.json, metrics.json
+notebooks/             Notebook that reproduces the training metrics
+Dockerfile             Container image
+render.yaml            Render blueprint (health check: /health)
+.github/workflows/     CI: retrain model + run tests on push
+```
+
+---
+
+## Docker
+
 ```bash
 docker build -t loanlens .
 docker run -p 8000:8000 loanlens
@@ -193,43 +142,31 @@ docker run -p 8000:8000 loanlens
 
 ---
 
-## Machine Learning Deep-Dive
+## Deployment
 
-The core of this project is the modeling workflow in `src/train.py`:
+The app runs on a single host (Render serves both the UI and the API), or split in two
+(UI on Vercel, API on Render). Three settings control it:
 
-1. **Data Cleaning** - Strips hidden whitespace from headers and categorical values
-   (a subtle real-world data quirk that silently produced an all-NaN target before
-   being caught and fixed), drops duplicates, enforces type consistency.
-2. **Exploratory Analysis** - Correlation analysis revealed `cibil_score` as the
-   dominant signal (|r| = 0.77 vs 0.11 for loan term and < 0.02 for everything else),
-   which guided feature treatment and model choice.
-3. **Leakage-Safe Preprocessing** - A `ColumnTransformer` performs median imputation +
-   `StandardScaler` on numeric features and most-frequent imputation + `OneHotEncoder`
-   on categorical features, fitted strictly on training data inside the pipeline.
-4. **Model Selection** - Three algorithms trained with stratified cross-validation and
-   `class_weight="balanced"` to counter class imbalance; the winner is picked
-   automatically on F1-score, not accuracy.
-5. **Evaluation & Export** - Per-class precision/recall/F1 reports, confusion matrices,
-   and the full fitted pipeline serialized with `joblib` so the served model applies
-   identical preprocessing at inference time.
-6. **Reproducibility** - `notebooks/loan_analysis.ipynb` re-derives the exact same
-   metrics, and CI re-runs training on every push to catch drift.
+| Setting | Where | Value |
+|---|---|---|
+| `ALLOWED_ORIGINS` | API (Render env var) | Frontend origin(s) allowed to call the API, comma separated |
+| `window.LOANLENS_API_BASE` | Frontend (`static/config.js`) | API URL, or `""` when the same host serves both |
+| `DATABASE_URL` | API (Render env var) | Optional SQL database (e.g. Render PostgreSQL); defaults to SQLite |
+
+* **Render:** deploy `render.yaml` as a Blueprint. It is kept in sync with the live
+  service name (`loan-approval-prediction-qsnu`) because Blueprints match services by
+  name - renaming it would create a second service instead of updating this one.
+* **Vercel:** redeploys automatically on every push to `main`.
+* Free tiers have no persistent disk, so the SQLite history resets on each deploy or
+  restart. Set `DATABASE_URL` if you want it to survive.
+* On read-only hosts (Vercel serverless) the app falls back to a temp-directory
+  database instead of failing writes with an HTTP 500.
 
 ---
 
-## Future Roadmap (AI / ML Extensions)
+## Notes
 
-- **Neural Network Benchmark** - Train an MLP (Keras/TensorFlow or PyTorch) with
-  dropout, batch normalization, and early stopping; compare against the Random Forest
-  on F1 and calibration, and serve the better model.
-- **SHAP Explainability** - Per-applicant feature-importance attributions so every
-  rejection comes with human-readable reasons (critical for credit decisions).
-- **Probability Calibration** - Isotonic/Platt calibration so the reported approval
-  probability is a true risk estimate, not just a ranking score.
-- **Hyperparameter Optimization** - Automated tuning (Optuna / RandomizedSearchCV)
-  with nested cross-validation instead of default estimator parameters.
-- **Churn-Style Analytics** - Predict early repayment default from historical payment patterns.
-- **What-If Simulator** - Sliders showing how much the CIBIL score must improve to
-  flip a rejection to an approval.
-- **PostgreSQL Migration** - Swap SQLite for PostgreSQL via the existing `DATABASE_URL`
-  for multi-user deployments.
+* 11 input features: demographics, income, loan details, asset values, and CIBIL score.
+* `prediction_logs` stores the applicant name, every input, the prediction, the
+  probability, and a UTC timestamp.
+* Tests never touch real history - they point `DATABASE_URL` at a temp file.
