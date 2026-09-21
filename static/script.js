@@ -165,7 +165,7 @@ function showResult(result, probability, applicantName) {
     <p><strong>${escapeHtml(applicantName)}</strong> &middot; model confidence ${percent}%</p>
     <div class="result__meter"><span style="width:${percent}%"></span></div>
     <div class="result__actions">
-      <a href="/history">Saved to history &middot; view submissions &rarr;</a>
+      <a href="${window.loanlensApiUrl("/history")}">Saved to history &middot; view submissions &rarr;</a>
     </div>
   `;
   resultBox.classList.remove("hidden");
@@ -211,7 +211,7 @@ form.addEventListener("submit", async (event) => {
   submitButton.textContent = "Predicting...";
 
   try {
-    const response = await fetch("/predict", {
+    const response = await fetch(window.loanlensApiUrl("/predict"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -249,5 +249,6 @@ cibilInput.addEventListener("input", () => {
 });
 
 /* ---------------------------------- init --------------------------------- */
+window.loanlensWireNavigation(document);
 showStep(1);
 

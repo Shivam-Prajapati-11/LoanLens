@@ -3,13 +3,50 @@
 #
 # Deploy: Render Dashboard -> New -> Blueprint -> pick this repository.
 # Render builds the Dockerfile below and exposes the app on a public URL.
+#
+# IMPORTANT - the Blueprint matches services by name, so this value must equal
+# the service you already deployed: Render uniquified `loan-approval-prediction`
+# to `loan-approval-prediction-qsnu` (the plain name is taken by the older
+# Loan-Approval-Prediction static site), which is why the live API answers at
+# https://loan-approval-prediction-qsnu.onrender.com
+#
+# Renaming this entry to something new (for example `loanlens-api`) would create
+# a SECOND service with a different URL instead of updating this one. Copy the
+# name from Render Dashboard -> the service -> Settings if it ever changes.
+#
+# After the first deploy, copy the service URL and:
+#   1. Render -> this service -> Environment -> ALLOWED_ORIGINS =
+#      https://<your-frontend>.vercel.app   (the built-in default already allows
+#      https://loan-approval-prediction-self.vercel.app)
+#   2. static/config.js -> window.LOANLENS_API_BASE = "https://loan-approval-prediction-qsnu.onrender.com"
+#      (only needed when the frontend is hosted on Vercel instead of here)
+#
+# The free plan has no persistent disk, so the SQLite history is wiped on every
+# deploy/restart. Uncomment the `DATABASE_URL` entry at the bottom to keep it.
 # ---------------------------------------------------------------------------
 services:
   - type: web
-    name: loan-approval-prediction
+    name: loan-approval-prediction-qsnu
     runtime: docker
     plan: free
     region: singapore
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
+    envVars:
+      # Comma-separated list of frontend origins allowed to call this API
+      # (CORS). `sync: false` makes Render prompt for the value.
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # Optional: durable storage instead of the container-local SQLite file.
+      # - key: DATABASE_URL
+      #   fromDatabase:
+      #     name: loanlens-db
+      #     property: connectionString
+      #
+# databases:
+#   - name: loanlens-db
+#     plan: free
+#     region: singapore
+#     databaseName: loanlens
+#     user: loanlens

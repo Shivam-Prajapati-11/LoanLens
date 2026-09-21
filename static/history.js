@@ -176,7 +176,7 @@ async function load() {
   refreshButton.disabled = true;
 
   try {
-    const response = await fetch("/api/history?limit=1000");
+    const response = await fetch(`${window.loanlensApiUrl("/api/history")}?limit=1000`);
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`);
     }
@@ -197,6 +197,7 @@ async function load() {
 searchInput.addEventListener("input", render);
 refreshButton.addEventListener("click", load);
 
+window.loanlensWireNavigation(document);
 buildHeader();
 load();
 

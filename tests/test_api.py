@@ -130,6 +130,61 @@ def test_history_page_is_served() -> None:
     assert "Prediction History" in response.text
 
 
+def test_runtime_config_script_is_served() -> None:
+    """The frontend reads its API base URL from /static/config.js."""
+    response = client.get("/static/config.js")
+    assert response.status_code == 200
+    assert "LOANLENS_API_BASE" in response.text
+    assert "loanlensApiUrl" in response.text
+
+
+def test_cors_allows_the_vercel_frontend() -> None:
+    """A frontend hosted on Vercel may call this API cross-origin."""
+    origin = "https://loan-approval-prediction-self.vercel.app"
+    response = client.options(
+        "/predict",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == origin
+    assert "POST" in response.headers["access-control-allow-methods"]
+
+
+def test_cors_rejects_unknown_origins() -> None:
+    response = client.options(
+        "/predict",
+        headers={
+            "Origin": "https://not-your-frontend.example.com",
+            "Access-Control-Request-Method": "POST",
+        },
+    )
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_sqlite_falls_back_to_a_writable_directory() -> None:
+    """Serverless bundles are read-only - the DB must move to a temp dir."""
+    from app import database
+
+    original = database._directory_is_writable
+    database._directory_is_writable = lambda directory: False  # type: ignore[assignment]
+    try:
+        fallback = database._default_sqlite_path()
+        assert fallback == Path(tempfile.gettempdir()) / "predictions.db"
+    finally:
+        database._directory_is_writable = original  # type: ignore[assignment]
+
+
+def test_legacy_postgres_url_is_normalised() -> None:
+    from app.database import _normalise_url
+
+    assert _normalise_url("postgres://u:p@host/db") == "postgresql://u:p@host/db"
+    assert _normalise_url("postgresql://u:p@host/db") == "postgresql://u:p@host/db"
+
+
 def _run() -> None:
     tests = [
         test_health,
@@ -140,6 +195,11 @@ def _run() -> None:
         test_predict_requires_applicant_name,
         test_predict_is_logged_in_history,
         test_history_page_is_served,
+        test_runtime_config_script_is_served,
+        test_cors_allows_the_vercel_frontend,
+        test_cors_rejects_unknown_origins,
+        test_sqlite_falls_back_to_a_writable_directory,
+        test_legacy_postgres_url_is_normalised,
     ]
     for test in tests:
         test()

@@ -18,11 +18,13 @@ Run locally with::
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import joblib
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -56,6 +58,40 @@ app = FastAPI(
         "would be **Approved** or **Rejected**, and stores every prediction in SQLite."
     ),
     version="1.0.0",
+)
+
+# --------------------------------------------------------------------------- #
+# CORS
+#
+# The frontend can be served from this same origin (``/`` -> static/index.html)
+# or hosted separately, e.g. a Vercel deployment talking to this API on Render.
+# The browser blocks the cross-origin calls without these headers - which looks
+# exactly like "Vercel is not connected to Render".
+#
+# ``ALLOWED_ORIGINS`` (comma separated) overrides the defaults below, so the
+# Render dashboard can point at whatever domain the frontend actually uses.
+# --------------------------------------------------------------------------- #
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://loan-approval-prediction-self.vercel.app",
+]
+
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "ALLOWED_ORIGINS", ",".join(DEFAULT_ALLOWED_ORIGINS)
+    ).split(",")
+    if origin.strip()
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    # Preview deployments get a new ``*.vercel.app`` subdomain on every push.
+    allow_origin_regex=r"https://[a-z0-9-]+(\.[a-z0-9-]+)*\.vercel\.app",
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 # --------------------------------------------------------------------------- #
@@ -122,15 +158,27 @@ def predict(
 
     # Persist the submission so the history dashboard can show it later.
     # ``features`` already uses the same names as the ORM columns.
-    db.add(
-        PredictionLog(
-            applicant_name=application.applicant_name,
-            **features,
-            prediction=TARGET_LABELS[prediction],
-            probability=round(probability, 4),
+    # A storage failure here (read-only filesystem, database outage) must not
+    # masquerade as a generic 500: the response names the real cause.
+    try:
+        db.add(
+            PredictionLog(
+                applicant_name=application.applicant_name,
+                **features,
+                prediction=TARGET_LABELS[prediction],
+                probability=round(probability, 4),
+            )
         )
-    )
-    db.commit()
+        db.commit()
+    except Exception as error:  # pragma: no cover - infrastructure guard
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Prediction succeeded but could not be stored "
+                f"({error}). Check DATABASE_URL / filesystem permissions."
+            ),
+        )
 
     return PredictionResponse(
         result=TARGET_LABELS[prediction],
